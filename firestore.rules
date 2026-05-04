@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Strict Admin check: specifically authorized for the specified admin email
+    function isVerifiedAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == 'ahmedgamalahmed159@gmail.com' && 
+             request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidSubject(data) {
+      return data.keys().hasAll(['name', 'nameAr', 'color']) &&
+             data.keys().size() <= 10 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.nameAr is string && data.nameAr.size() <= 100 &&
+             data.color is string && data.color.size() <= 20;
+    }
+
+    function isValidLecture(data) {
+      return data.keys().hasAll(['title', 'description', 'videoUrl', 'subjectId', 'date']) &&
+             data.keys().size() <= 10 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.videoUrl is string && data.videoUrl.size() <= 1000 &&
+             data.subjectId is string && isValidId(data.subjectId);
+    }
+
+    function isValidFile(data) {
+      return data.keys().hasAll(['title', 'fileUrl', 'fileType', 'subjectId', 'date']) &&
+             data.keys().size() <= 10 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.fileUrl is string && data.fileUrl.size() <= 1000 &&
+             data.fileType is string &&
+             data.subjectId is string && isValidId(data.subjectId);
+    }
+
+    function isValidTerm(data) {
+      return data.keys().hasAll(['term', 'definition', 'category']) &&
+             data.keys().size() <= 8 &&
+             data.term is string && data.term.size() <= 100 &&
+             data.definition is string && data.definition.size() <= 2000 &&
+             data.category is string && data.category.size() <= 100;
+    }
+
+    function isValidProgress(data) {
+      return data.keys().hasAll(['userId', 'itemId', 'itemType', 'completed', 'updatedAt']) &&
+             data.keys().size() == 5 &&
+             data.userId == request.auth.uid &&
+             data.itemId is string &&
+             data.itemType in ['lecture', 'file'] &&
+             data.completed is bool &&
+             data.updatedAt == request.time;
+    }
+
+    function isValidTip(data) {
+      return data.keys().hasAll(['title', 'content', 'icon', 'date']) &&
+             data.keys().size() <= 6 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 2000 &&
+             data.icon is string && data.date is string;
+    }
+
+    function isValidPost(data) {
+      return data.keys().hasAll(['title', 'content', 'authorId', 'authorName', 'createdAt']) &&
+             data.keys().size() <= 8 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.authorId == request.auth.uid &&
+             data.authorName is string &&
+             data.createdAt == request.time;
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['postId', 'userId', 'userName', 'content', 'createdAt']) &&
+             data.keys().size() <= 7 &&
+             data.postId is string &&
+             data.userId == request.auth.uid &&
+             data.userName is string &&
+             data.content is string && data.content.size() <= 1000 &&
+             data.createdAt == request.time;
+    }
+
+    // --- Collection Matches ---
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(subjectId) && isValidSubject(incoming());
+      allow update: if isVerifiedAdmin() && isValidSubject(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'nameAr', 'color', 'icon']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /lectures/{lectureId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(lectureId) && isValidLecture(incoming());
+      allow update: if isVerifiedAdmin() && isValidLecture(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'videoUrl', 'subjectId', 'date', 'createdAt']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /files/{fileId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(fileId) && isValidFile(incoming());
+      allow update: if isVerifiedAdmin() && isValidFile(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'fileUrl', 'fileType', 'subjectId', 'date', 'createdAt']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /terms/{termId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(termId) && isValidTerm(incoming());
+      allow update: if isVerifiedAdmin() && isValidTerm(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['term', 'definition', 'category', 'example']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /userProgress/{progressId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(progressId) && isValidProgress(incoming());
+      allow update: if isSignedIn() && isValidProgress(incoming()) && 
+                    existing().userId == request.auth.uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /tips/{tipId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(tipId) && isValidTip(incoming());
+      allow update: if isVerifiedAdmin() && isValidTip(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'icon', 'date', 'isNew']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isVerifiedAdmin() && isValidId(postId) && isValidPost(incoming());
+      allow update: if isVerifiedAdmin() && isValidPost(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content']);
+      allow delete: if isVerifiedAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(commentId) && isValidComment(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidComment(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['content']);
+      allow delete: if isVerifiedAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+  }
+}

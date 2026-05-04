@@ -1,0 +1,143 @@
+{
+  "entities": {
+    "Subject": {
+      "title": "Subject",
+      "description": "Educational subject category",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "nameAr": { "type": "string" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name", "nameAr", "color"]
+    },
+    "Lecture": {
+      "title": "Lecture",
+      "description": "A video lecture",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "videoUrl", "subjectId", "date"]
+    },
+    "StudyFile": {
+      "title": "Study File",
+      "description": "A downloadable study resource",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileType": { "type": "string", "enum": ["pdf", "doc", "xls", "ppt", "other"] },
+        "subjectId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "fileUrl", "fileType", "subjectId", "date"]
+    },
+    "Term": {
+      "title": "Term",
+      "description": "An academic term or definition",
+      "type": "object",
+      "properties": {
+        "term": { "type": "string" },
+        "definition": { "type": "string" },
+        "category": { "type": "string" },
+        "example": { "type": "string" }
+      },
+      "required": ["term", "definition", "category"]
+    },
+    "UserProgress": {
+      "title": "User Progress",
+      "description": "Tracking item completion for users",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "itemId": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["lecture", "file"] },
+        "completed": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "itemId", "itemType", "completed", "updatedAt"]
+    },
+    "Tip": {
+      "title": "Study Tip",
+      "description": "Academic tips for students",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "icon": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "isNew": { "type": "boolean" }
+      },
+      "required": ["title", "content", "icon", "date"]
+    },
+    "Post": {
+      "title": "Platform Post",
+      "description": "Announcements and discussions",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "authorId", "authorName", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comments on posts",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "userId", "userName", "content", "createdAt"]
+    }
+  },
+  "firestore": {
+    "subjects": {
+      "schema": "Subject",
+      "description": "Collection of academic subjects"
+    },
+    "lectures": {
+      "schema": "Lecture",
+      "description": "Collection of video lectures"
+    },
+    "files": {
+      "schema": "StudyFile",
+      "description": "Collection of study files"
+    },
+    "terms": {
+      "schema": "Term",
+      "description": "Collection of academic terms"
+    },
+    "userProgress": {
+      "schema": "UserProgress",
+      "description": "Tracking user progress on lectures and files"
+    },
+    "tips": {
+      "schema": "Tip",
+      "description": "Collection of academic tips"
+    },
+    "posts": {
+      "schema": "Post",
+      "description": "Collection of announcements and posts"
+    },
+    "comments": {
+      "schema": "Comment",
+      "description": "Collection of comments on posts"
+    }
+  }
+}
