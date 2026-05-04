@@ -334,6 +334,30 @@ export default function App() {
     }
   };
 
+  const handleUpdateTip = async (id: string, tipData: any) => {
+    try {
+      await updateDoc(doc(db, 'tips', id), tipData);
+      showToast('تم تحديث النصيحة بنجاح.');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `tips/${id}`);
+      showToast(getFriendlyErrorMessage(err), 'error');
+    }
+  };
+
+  const handleUpdatePost = async (id: string, postData: any) => {
+    try {
+      await updateDoc(doc(db, 'posts', id), {
+        title: postData.title,
+        content: postData.content,
+        updatedAt: serverTimestamp()
+      });
+      showToast('تم تحديث الإعلان بنجاح.');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `posts/${id}`);
+      showToast(getFriendlyErrorMessage(err), 'error');
+    }
+  };
+
   const handleAddTip = async (tipData: any) => {
     try {
       await addDoc(collection(db, 'tips'), {
@@ -1035,8 +1059,10 @@ export default function App() {
               onUpdateTerm={handleUpdateTerm}
               onDeleteTerm={(id: string) => deleteItem('terms', id)}
               onAddTip={handleAddTip}
+              onUpdateTip={handleUpdateTip}
               onDeleteTip={(id: string) => deleteItem('tips', id)}
               onAddPost={handleAddPost}
+              onUpdatePost={handleUpdatePost}
               onDeletePost={(id: string) => deleteItem('posts', id)}
             />
           )}
@@ -1127,7 +1153,7 @@ export default function App() {
 function AdminPanel({ 
   subjects, lectures, files, terms, tips, posts,
   onAddLecture, onUpdateLecture, onAddFile, onUpdateFile, onDeleteLecture, onDeleteFile, onDeleteSubject, onAddSubject, onUpdateSubject, onAddTerm, onUpdateTerm, onDeleteTerm,
-  onAddTip, onDeleteTip, onAddPost, onDeletePost
+  onAddTip, onUpdateTip, onDeleteTip, onAddPost, onUpdatePost, onDeletePost
 }: any) {
   const [tab, setTab] = useState<'lectures' | 'files' | 'subjects' | 'terms' | 'tips' | 'announcements'>('lectures');
   const [formData, setFormData] = useState<any>({});
@@ -1152,10 +1178,12 @@ function AdminPanel({
       else onAddTerm(formData);
     }
     else if (tab === 'tips') {
-      onAddTip(formData);
+      if (editingItem) onUpdateTip(editingItem.id, formData);
+      else onAddTip(formData);
     }
     else if (tab === 'announcements') {
-      onAddPost(formData);
+      if (editingItem) onUpdatePost(editingItem.id, formData);
+      else onAddPost(formData);
     }
     setFormData({});
     setEditingItem(null);
@@ -1330,15 +1358,13 @@ function AdminPanel({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {tab !== 'announcements' && tab !== 'tips' && (
-                      <button 
-                        onClick={() => handleEdit(item)}
-                        className="p-3 text-academic-teal bg-slate-50 rounded-lg hover:bg-academic-teal hover:text-white transition-all shadow-sm"
-                        title="تعديل"
-                      >
-                        <Edit3 className="w-5 h-5" />
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => handleEdit(item)}
+                      className="p-3 text-academic-teal bg-slate-50 rounded-lg hover:bg-academic-teal hover:text-white transition-all shadow-sm"
+                      title="تعديل"
+                    >
+                      <Edit3 className="w-5 h-5" />
+                    </button>
                     <button 
                       onClick={() => {
                         if(confirm('تنبيه: سيتم حذف البيانات نهائياً من السجلات الأكاديمية. هل تود المتابعة؟')) {
