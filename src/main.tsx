@@ -6,7 +6,7 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter basename="/atallm/">
+    <HashRouter>
       <App />
     </HashRouter>
   </StrictMode>,
