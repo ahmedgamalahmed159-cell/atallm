@@ -1434,12 +1434,9 @@ function LoginModal({ onClose, showToast }: any) {
     }
   };
 
-  const handleAdminLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (password !== '333555') {
-      showToast('كلمة المرور الإدارية غير صحيحة.', 'error');
-      return;
-    }
+    setLoading(true);
+    try {
     setLoading(true);
     try {
       await loginWithEmail(ADMIN_EMAIL, password);
